@@ -15,28 +15,19 @@ client.once(Events.ClientReady, (c) => {
   console.log(`Ready! Logged in as ${c.user.tag}`);
 });
 
+client.on("ready", function () {
+  client.user.setUsername("Weather bot");
+});
+
 client.on("roleCreate", (role) => {
   console.log(role.name, role.permissions);
 });
 
 client.on("messageCreate", (message) => {});
 
-// client.on("channelCreate", (channel) => {
-//   console.log(channel.members);
-// });
-
 client.on("channelCreate", (channel) => {
   console.log("New channel created: " + channel.name);
 });
-
-// client.on("messageCreate", (message) => {
-//   const channelName = message.channel.name;
-//   console.log(channelName);
-//   const guildName = message.channel.guild.name;
-//   console.log(
-//     `Message sent in server: ${guildName} and in channel ${channelName}`
-//   );
-// });
 
 client.on("messageCreate", async (msg) => {
   if (msg.author.bot) return;
@@ -50,27 +41,39 @@ client.on("messageCreate", async (msg) => {
     }
     if (cmdName) {
       try {
+        //call api theo tên thành phố để lấy lat và lon
         const response = await fetch(
           `http://api.openweathermap.org/geo/1.0/direct?q=${cmdName}&appid=${apikeyWeather}`
         );
+
+        //convert data nhận đc
         const data = await response.json();
+
+        //kiểm tra nếu data trả về mảng rỗng(không tìm thấy thành phố) thì gửi msg như dưới
         if (data.length === 0) {
           msg.channel.send(
             `Xin lỗi bạn,hiện tại tôi không có dữ liệu và thành phố ${cmdName}`
           );
           return;
         }
+
         const lat = data[0].lat;
         const lon = data[0].lon;
-
+        //call api theo lat và lon tìm đc bên trên theo tên thành phố
         const weather = await fetch(
           `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apikeyWeather}`
         );
 
+        //convert data
         const weatherData = await weather.json();
+
+        //chuyển thành độ C
         const temperature = (weatherData.main.temp - 273.15).toFixed();
-        console.log(temperature);
-        msg.channel.send(`Nhiệt độ tại ${cmdName} bây giờ là ${temperature}°C`);
+
+        //send msg
+        msg.channel.send(
+          `Nhiệt độ tại ${data[0].name} bây giờ là ${temperature}°C`
+        );
       } catch (e) {
         msg.channel.send("Đm các bạn");
       }
